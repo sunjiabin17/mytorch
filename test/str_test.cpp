@@ -1,7 +1,11 @@
 #include <c10/util/string_util.h>
+#include <c10/util/exception.h>
+
 #include <gtest/gtest.h>
 #include <string>
 #include <iostream>
+#include "c10/util/exception.h"
+
 
 TEST(Str_Append_TEST, test1) {
   std::string str{"hello"};
