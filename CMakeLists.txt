@@ -23,8 +23,11 @@ enable_testing()
 option(BUILD_TEST "Build the test" ON)
 cmake_dependent_option(INSTALL_TEST "Install the test" ON "BUILD_TEST" OFF)
 
-add_subdirectory(test)
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(BUILD_TEST)
   add_subdirectory(third_party/googletest)
+  add_subdirectory(test)
 endif()
+
+add_subdirectory(c10)
