@@ -5,8 +5,12 @@
 
 class TestClass : public c10::intrusive_ptr_target {
 public:
-  TestClass() : c10::intrusive_ptr_target() {
-    std::cout << "line: " << __LINE__<< " TestClass constructor" << std::endl;
+  int a;
+  TestClass() : a(0), c10::intrusive_ptr_target() {
+    std::cout <<"TestClass constructor" << std::endl;
+  }
+  TestClass(int a) : a(a), c10::intrusive_ptr_target() {
+    std::cout <<"TestClass constructor" << std::endl;
   }
 
   ~TestClass() override {
@@ -49,7 +53,7 @@ void print_count(c10::weak_intrusive_ptr<T, NullType>& ptr) {
   std::cout << "intrusive_weak_weakcount: " << ptr.weak_use_count() << std::endl;
 }
 
-TEST(IntrusivePtr_TEST, test1) {
+TEST(IntrusivePtrTEST, test1) {
   c10::intrusive_ptr<TestClass, TestClassNull> ptr = c10::make_intrusive<TestClass, TestClassNull>();
   print_count(ptr);
   c10::weak_intrusive_ptr<TestClass, TestClassNull> wptr(ptr);
@@ -57,7 +61,7 @@ TEST(IntrusivePtr_TEST, test1) {
 
 }
 
-TEST(IntrusivePtr_TEST, test2) {
+TEST(IntrusivePtrTEST, test2) {
   auto ptr = c10::make_intrusive<TestClass, TestClassNull>();
   print_count(ptr);
 
@@ -68,7 +72,7 @@ TEST(IntrusivePtr_TEST, test2) {
   print_count(wptr2);
 }
 
-TEST(IntrusivePtr_TEST, test3) {
+TEST(IntrusivePtrTEST, test3) {
   auto ptr = c10::make_intrusive<TestClass, TestClassNull>();
   print_count(ptr);
 
@@ -91,4 +95,53 @@ TEST(IntrusivePtr_TEST, test3) {
   ptr3.reset();
   auto ptr4 = wptr.lock();
   ASSERT_EQ(ptr4.defined(), false);
+}
+
+TEST(IntrusivePtrTEST, test_operator) {
+  auto ptr1 = c10::make_intrusive<TestClass, TestClassNull>(12);
+  auto ptr2 = c10::make_intrusive<TestClass, TestClassNull>(12);
+
+  ASSERT_EQ(ptr1 != ptr2, true);
+  // NOLINTNEXTLINE
+  auto ptr11 = ptr1;
+  ASSERT_EQ(ptr1 == ptr11, true);
+
+  c10::weak_intrusive_ptr<TestClass, TestClassNull> wptr1(ptr1);
+  c10::weak_intrusive_ptr<TestClass, TestClassNull> wptr11(ptr1);
+  ASSERT_EQ(wptr1 == wptr1, true);
+  ASSERT_EQ(wptr1 != wptr1, false);
+
+  c10::weak_intrusive_ptr<TestClass, TestClassNull> wptr2(ptr2);
+  ASSERT_EQ(wptr1 == wptr2, false);
+  ASSERT_EQ(wptr1 != wptr2, true);
+}
+
+TEST(IntrusivePtrTEST, test_reclaim) {
+  auto ptr1 = c10::make_intrusive<TestClass, TestClassNull>(12);
+  auto* p = ptr1.release();
+  auto pi = c10::intrusive_ptr<TestClass, TestClassNull>::reclaim(p);
+  ASSERT_EQ(pi.ref_use_count(), 1);
+  ASSERT_EQ(pi.weak_use_count(), 1);
+  ASSERT_EQ(pi.defined(), true);
+  ASSERT_EQ(p, pi.get());
+
+  auto p2 = c10::intrusive_ptr<TestClass, TestClassNull>::reclaim_copy(p);
+  ASSERT_EQ(p2.ref_use_count(), 2);
+  ASSERT_EQ(p2.weak_use_count(), 1);
+}
+
+TEST(IntrusivePtrTEST, test_reclaim_weak) {
+  auto ptr1 = c10::make_intrusive<TestClass, TestClassNull>(12);
+  auto tmp = c10::weak_intrusive_ptr<TestClass, TestClassNull>(ptr1);
+  auto* p = tmp.release();
+  auto pw_weak = c10::weak_intrusive_ptr<TestClass, TestClassNull>::reclaim(p);
+  ASSERT_EQ(pw_weak.ref_use_count(), 1);
+  ASSERT_EQ(pw_weak.weak_use_count(), 2);
+  ASSERT_EQ(pw_weak.unsafe_get_target(), p);
+
+  auto pw_weak2 = c10::weak_intrusive_ptr<TestClass, TestClassNull>::reclaim_copy(p);
+  ASSERT_EQ(pw_weak2.ref_use_count(), 1);
+  ASSERT_EQ(pw_weak2.weak_use_count(), 3);
+  ASSERT_EQ(pw_weak2.unsafe_get_target(), p);
+
 }

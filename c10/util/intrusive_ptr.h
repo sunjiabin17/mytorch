@@ -257,12 +257,21 @@ public:
   }
 
   static intrusive_ptr reclaim(TTarget* owning_ptr) {
+    // owning pointer must be one of the following:
+    // 1. null
+    // 2. refcount > 0
     TORCH_CHECK(
         owning_ptr == NullType::null() or
         owning_ptr->refcount_.load(std::memory_order_acquire) == 0 or
         owning_ptr->weakcount_.load(std::memory_order_acquire) > 0,
         "reclaim() received a invalid pointer that refcout > 0 and weakcount == 0");
-    return intrusive_ptr(owning_ptr);
+    return intrusive_ptr(owning_ptr, raw::DontIncreaseRefcount{});
+  }
+
+  static intrusive_ptr reclaim_copy(TTarget* owning_ptr) {
+    auto ret = reclaim(owning_ptr);
+    ret.retain_();
+    return ret;
   }
 
   template <class... Args>
@@ -293,6 +302,62 @@ template <
     class... Args>
 inline intrusive_ptr<TTarget, NullType> make_intrusive(Args&&... args) {
   return intrusive_ptr<TTarget, NullType>::make(std::forward<Args>(args)...);
+}
+
+template <class TTarget1, class NullType1, class TTarget2, class NullType2>
+inline bool operator<(
+    const intrusive_ptr<TTarget1, NullType1>& lhs,
+    const intrusive_ptr<TTarget2, NullType2>& rhs) noexcept {
+  return lhs.get() < rhs.get();
+}
+
+template <class TTarget1, class NullType1, class TTarget2, class NullType2>
+inline bool operator==(
+    const intrusive_ptr<TTarget1, NullType1>& lhs,
+    const intrusive_ptr<TTarget2, NullType2>& rhs) noexcept {
+  return lhs.get() == rhs.get();
+}
+
+template <class TTarget1, class NullType1>
+inline bool operator==(
+    const intrusive_ptr<TTarget1, NullType1>& lhs,
+    std::nullptr_t) noexcept {
+  return lhs.get() == nullptr;
+}
+
+template <class TTarget1, class NullType1>
+inline bool operator==(
+    std::nullptr_t,
+    const intrusive_ptr<TTarget1, NullType1>& rhs) noexcept {
+  return nullptr == rhs.get();
+}
+
+template <class TTarget1, class NullType1, class TTarget2, class NullType2>
+inline bool operator!=(
+    const intrusive_ptr<TTarget1, NullType1>& lhs,
+    const intrusive_ptr<TTarget2, NullType2>& rhs) noexcept {
+  return !operator==(lhs, rhs);
+}
+
+template <class TTarget1, class NullType1>
+inline bool operator!=(
+    const intrusive_ptr<TTarget1, NullType1>& lhs,
+    std::nullptr_t) noexcept {
+  return !operator==(lhs, lhs);
+}
+
+template <class TTarget1, class NullType1>
+inline bool operator!=(
+    std::nullptr_t,
+    const intrusive_ptr<TTarget1, NullType1>& rhs) noexcept {
+  return !operator==(rhs, rhs);
+}
+
+template <class TTarget1, class NullType1>
+inline void swap(
+    intrusive_ptr<TTarget1, NullType1>& lhs,
+    intrusive_ptr<TTarget1, NullType1>& rhs) noexcept {
+  lhs.swap(rhs);
 }
 
 
@@ -405,7 +470,7 @@ public:
   }
 
   void reset() noexcept {
-    reset();
+    reset_();
   }
 
   void swap(weak_intrusive_ptr& rhs) noexcept {
@@ -452,6 +517,91 @@ public:
     }
   }
 
+  TTarget* release() noexcept {
+    TTarget* result = target_;
+    target_ = NullType::null();
+    return result;
+  }
+
+  static weak_intrusive_ptr reclaim(TTarget* owning_ptr) {
+    // if refcount == 0, weakcount only must be >0
+    // if refcount > 0, weakcount must be >1 for weak references to exist.
+    // owning pointer must be one of the following:
+    // 1. null
+    // 2. weakcount > 1
+    // 3. if refcount == 0, weakcount must be > 0
+    // bad cases:
+    // raw pointer(refcount == 0, weakcount == 0)
+    // owning pointer without weak references (refcount == xx, weakcount == 1)
+    TORCH_CHECK(
+      owning_ptr == NullType::null() or
+      owning_ptr->weakcount_.load() > 1 or
+      owning_ptr->refcount_.load() == 0 and
+      owning_ptr->weakcount_.load() > 0,
+      "weak_intrusive_ptr: reclaim() received a invalid pointer");
+    return weak_intrusive_ptr(owning_ptr);
+  }
+
+  static weak_intrusive_ptr reclaim_copy(TTarget* owning_ptr) {
+    auto ret = reclaim(owning_ptr);
+    ret.retain_();
+    return ret;
+  }
+
+  template <class TTarget1, class NullType1, class TTarget2, class NullType2>
+  friend bool operator<(
+      const weak_intrusive_ptr<TTarget1, NullType1>& lhs,
+      const weak_intrusive_ptr<TTarget2, NullType2>& rhs) noexcept;
+
+  template <class TTarget1, class NullType1, class TTarget2, class NullType2>
+  friend bool operator==(
+      const weak_intrusive_ptr<TTarget1, NullType1>& lhs,
+      const weak_intrusive_ptr<TTarget2, NullType2>& rhs) noexcept;
+
 };
 
+template <class TTarget1, class NullType1, class TTarget2, class NullType2>
+inline bool operator<(
+    const weak_intrusive_ptr<TTarget1, NullType1>& lhs,
+    const weak_intrusive_ptr<TTarget2, NullType2>& rhs) noexcept {
+  return lhs.target_ < rhs.target_;
+}
+
+template <class TTarget1, class NullType1, class TTarget2, class NullType2>
+inline bool operator==(
+    const weak_intrusive_ptr<TTarget1, NullType1>& lhs,
+    const weak_intrusive_ptr<TTarget2, NullType2>& rhs) noexcept {
+  return lhs.target_ == rhs.target_;
+}
+
+template <class TTarget1, class NullType1, class TTarget2, class NullType2>
+inline bool operator!=(
+    const weak_intrusive_ptr<TTarget1, NullType1>& lhs,
+    const weak_intrusive_ptr<TTarget2, NullType2>& rhs) noexcept {
+  return !operator==(lhs, rhs);
+}
+
+template <class TTarget1, class NullType1>
+inline void swap(
+    weak_intrusive_ptr<TTarget1, NullType1>& lhs,
+    weak_intrusive_ptr<TTarget1, NullType1>& rhs) noexcept {
+  lhs.swap(rhs);
+}
+
 } // namespace c10
+
+namespace std {
+template <class TTarget, class NullType>
+struct hash<c10::intrusive_ptr<TTarget, NullType>> {
+  size_t operator()(const c10::intrusive_ptr<TTarget, NullType>& ptr) const {
+    return std::hash<TTarget*>()(ptr.get());
+  }
+};
+
+template <class TTarget, class NullType>
+struct hash<c10::weak_intrusive_ptr<TTarget, NullType>> {
+  size_t operator()(const c10::weak_intrusive_ptr<TTarget, NullType>& ptr) const {
+    return std::hash<TTarget*>()(ptr.unsafe_get_target());
+  }
+};
+}
