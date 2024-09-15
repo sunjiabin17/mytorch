@@ -1,11 +1,11 @@
 #pragma once
 
-#include <c10/util/macros.h>
 #include <c10/util/exception.h>
+#include <c10/util/macros.h>
 
-#include <utility>
-#include <type_traits>
 #include <memory>
+#include <type_traits>
+#include <utility>
 
 namespace c10 {
 
@@ -32,10 +32,9 @@ struct MaybeOwnedTraitsImpl {
     return borrow;
   }
 
-    static bool debugBorrowIsValid(const borrow_type& borrow) {
-      return borrow != nullptr;
+  static bool debugBorrowIsValid(const borrow_type& borrow) {
+    return borrow != nullptr;
   }
-
 };
 
 template <typename T>
@@ -67,7 +66,7 @@ class MaybeOwned final {
   explicit MaybeOwned(std::in_place_t, Args&&... args)
       : isBorrowed_(false), own_(std::forward<Args>(args)...) {}
 
-public:
+ public:
   explicit MaybeOwned() : isBorrowed_(true), borrow_() {}
 
   // copy constructor
@@ -85,17 +84,17 @@ public:
       return *this;
     }
     if (UNLIKELY(!isBorrowed_)) { // if this is owned
-      if (rhs.isBorrowed_) {      // if rhs is borrowed
-        own_.~T();                // destroy the owned object
+      if (rhs.isBorrowed_) { // if rhs is borrowed
+        own_.~T(); // destroy the owned object
         MaybeOwnedTraits<T>::assignBorrow(borrow_, rhs.borrow_);
         isBorrowed_ = true;
-      } else {                    // if rhs is owned
-        own_ = rhs.own_;          // copy the owned object to this
+      } else { // if rhs is owned
+        own_ = rhs.own_; // copy the owned object to this
       }
-    } else {                          // if this is borrowed
-      if (LIKELY(rhs.isBorrowed_)) {  // if rhs is borrowed
+    } else { // if this is borrowed
+      if (LIKELY(rhs.isBorrowed_)) { // if rhs is borrowed
         MaybeOwnedTraits<T>::assignBorrow(borrow_, rhs.borrow_);
-      } else {                        // if rhs is owned
+      } else { // if rhs is owned
         MaybeOwnedTraits<T>::destroyBorrow(borrow_);
         new (&own_) T(rhs.own_);
         isBorrowed_ = false;
@@ -107,8 +106,8 @@ public:
 
   // move constructor
   MaybeOwned(MaybeOwned&& rhs) noexcept(
-      std::is_nothrow_move_constructible_v<T> and
-      std::is_nothrow_move_assignable_v<borrow_type>)
+      std::is_nothrow_move_constructible_v<T>and
+          std::is_nothrow_move_assignable_v<borrow_type>)
       : isBorrowed_(rhs.isBorrowed_) {
     if (LIKELY(rhs.isBorrowed_)) {
       MaybeOwnedTraits<T>::assignBorrow(borrow_, rhs.borrow_);
@@ -119,26 +118,25 @@ public:
 
   // move assignment
   MaybeOwned& operator=(MaybeOwned&& rhs) noexcept(
-      std::is_nothrow_move_assignable_v<T> and
-      std::is_nothrow_move_assignable_v<borrow_type> and
-      std::is_nothrow_move_constructible_v<T> and
-      std::is_nothrow_destructible_v<T> and
-      std::is_nothrow_destructible_v<borrow_type>) {
+      std::is_nothrow_move_assignable_v<T>and std::is_nothrow_move_assignable_v<
+          borrow_type>and std::is_nothrow_move_constructible_v<T>and
+          std::is_nothrow_destructible_v<T>and
+              std::is_nothrow_destructible_v<borrow_type>) {
     if (this == &rhs) {
       return *this;
     }
-    if (UNLIKELY(!isBorrowed_)) {       // if this is owned
-      if (rhs.isBorrowed_) {            // if rhs is borrowed
-        own_.~T();                      // destroy the owned object
+    if (UNLIKELY(!isBorrowed_)) { // if this is owned
+      if (rhs.isBorrowed_) { // if rhs is borrowed
+        own_.~T(); // destroy the owned object
         MaybeOwnedTraits<T>::assignBorrow(borrow_, rhs.borrow_);
         isBorrowed_ = true;
-      } else {                          // if rhs is owned
-        own_ = std::move(rhs.own_);     // move the owned object to this
+      } else { // if rhs is owned
+        own_ = std::move(rhs.own_); // move the owned object to this
       }
-    } else {                            // if this is borrowed
-      if(LIKELY(rhs.isBorrowed_)) {     // if rhs is borrowed
+    } else { // if this is borrowed
+      if (LIKELY(rhs.isBorrowed_)) { // if rhs is borrowed
         MaybeOwnedTraits<T>::assignBorrow(borrow_, rhs.borrow_);
-      } else {                          // if rhs is owned
+      } else { // if rhs is owned
         MaybeOwnedTraits<T>::destroyBorrow(borrow_);
         new (&own_) T(std::move(rhs.own_));
         isBorrowed_ = false;
@@ -161,9 +159,8 @@ public:
     return MaybeOwned(std::in_place, std::forward<Args>(args)...);
   }
 
-  ~MaybeOwned() noexcept(
-      std::is_nothrow_destructible_v<T> and
-      std::is_nothrow_destructible_v<borrow_type>) {
+  ~MaybeOwned() noexcept(std::is_nothrow_destructible_v<T>and
+                             std::is_nothrow_destructible_v<borrow_type>) {
     if (UNLIKELY(!isBorrowed_)) {
       own_.~T();
     } else {
@@ -175,16 +172,15 @@ public:
     return isBorrowed_;
   }
 
-  const T& operator*() const & {
+  const T& operator*() const& {
     return LIKELY(isBorrowed_)
         ? MaybeOwnedTraits<T>::referenceFromBorrow(borrow_)
         : own_;
   }
 
-  const T* operator->() const & {
-    return LIKELY(isBorrowed_)
-        ? MaybeOwnedTraits<T>::pointerFromBorrow(borrow_)
-        : &own_;
+  const T* operator->() const& {
+    return LIKELY(isBorrowed_) ? MaybeOwnedTraits<T>::pointerFromBorrow(borrow_)
+                               : &own_;
   }
 
   T operator*() && {
@@ -194,8 +190,6 @@ public:
       return std::move(own_);
     }
   }
-
 };
-
 
 } // namespace c10
