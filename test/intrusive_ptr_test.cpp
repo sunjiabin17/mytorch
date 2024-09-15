@@ -1,5 +1,5 @@
 #include <c10/util/intrusive_ptr.h>
-
+#include <c10/util/maybe_owned.h>
 #include <gtest/gtest.h>
 #include <iostream>
 
@@ -38,7 +38,7 @@ public:
 };
 
 template <typename T, typename NullType>
-void print_count(c10::intrusive_ptr<T, NullType>& ptr) {
+void print_count(const c10::intrusive_ptr<T, NullType>& ptr) {
   if (ptr) {
     std::cout << "intrusive_refcount: " << ptr.ref_use_count() << std::endl;
     std::cout << "intrusive_weakcount: " << ptr.weak_use_count() << std::endl;
@@ -48,7 +48,7 @@ void print_count(c10::intrusive_ptr<T, NullType>& ptr) {
 }
 
 template <typename T, typename NullType>
-void print_count(c10::weak_intrusive_ptr<T, NullType>& ptr) {
+void print_count(const c10::weak_intrusive_ptr<T, NullType>& ptr) {
   std::cout << "intrusive_weak_refcount: " << ptr.ref_use_count() << std::endl;
   std::cout << "intrusive_weak_weakcount: " << ptr.weak_use_count() << std::endl;
 }
@@ -143,5 +143,20 @@ TEST(IntrusivePtrTEST, test_reclaim_weak) {
   ASSERT_EQ(pw_weak2.ref_use_count(), 1);
   ASSERT_EQ(pw_weak2.weak_use_count(), 3);
   ASSERT_EQ(pw_weak2.unsafe_get_target(), p);
+
+}
+
+TEST(IntrusivePtrTEST, test_maybe_owned) {
+  auto ptr1 = c10::make_intrusive<TestClass>(12);
+  print_count(ptr1);
+  auto borrowed = c10::MaybeOwned<decltype(ptr1)>::borrowed(ptr1);
+  print_count(*borrowed);
+  ASSERT_EQ(borrowed->ref_use_count(), 1);
+  ASSERT_EQ(borrowed->weak_use_count(), 1);
+
+  auto ptr2 = c10::make_intrusive<TestClass>(122);
+  print_count(ptr2);
+  auto owned = c10::MaybeOwned<decltype(ptr2)>::owned(std::move(ptr2));
+  print_count(*owned);
 
 }

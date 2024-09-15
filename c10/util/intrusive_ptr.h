@@ -1,12 +1,12 @@
 #pragma once
 
 #include <c10/util/exception.h>
+#include <c10/util/maybe_owned.h>
 
 #include <atomic>
 #include <cassert>
 #include <cstddef>
 #include <type_traits>
-
 
 namespace c10 {
 
@@ -16,7 +16,6 @@ struct DontIncreaseRefcount {};
 
 // NOLINTNEXTLINE(cppcoreguidelines-virtual-class-destructor)
 class intrusive_ptr_target {
-
   mutable std::atomic<uint32_t> refcount_;
   mutable std::atomic<uint32_t> weakcount_;
 
@@ -26,7 +25,7 @@ class intrusive_ptr_target {
   template <class TTarget, class NullType>
   friend class weak_intrusive_ptr;
 
-protected:
+ protected:
   virtual ~intrusive_ptr_target() {
     assert(refcount_.load() == 0);
     assert(weakcount_.load() == 0 or weakcount_.load() == 1);
@@ -48,7 +47,7 @@ protected:
     return *this;
   }
 
-private:
+ private:
   // this is called when refcount reaches zero.
   virtual void release_resources() {}
 };
@@ -86,14 +85,13 @@ struct intrusive_default_null final {
   }
 };
 
-
 } // namespace detail
 
 template <
     class TTarget,
     class NullType = detail::intrusive_default_null<TTarget>>
 class intrusive_ptr final {
-private:
+ private:
   TTarget* target_;
 
   static_assert(
@@ -107,10 +105,10 @@ private:
   void retain_() {
     if (target_ != NullType::null()) {
       uint32_t new_refcount =
-        detail::atomic_refcount_increment(target_->refcount_);
+          detail::atomic_refcount_increment(target_->refcount_);
       TORCH_CHECK(
-        new_refcount != 1,
-        "intrusive_ptr: internal error: retain_() called on a target after it reached 0.");
+          new_refcount != 1,
+          "intrusive_ptr: internal error: retain_() called on a target after it reached 0.");
     }
   }
 
@@ -118,14 +116,16 @@ private:
     if (target_ != NullType::null() and
         detail::atomic_refcount_decrement(target_->refcount_) == 0) {
       bool should_delete =
-        target_->weakcount_.load(std::memory_order_acquire) == 1;
+          target_->weakcount_.load(std::memory_order_acquire) == 1;
       if (!should_delete) {
-      // refcount is 0, weakcount > 1, so there is still other weak_ptrs, we should release resources
+        // refcount is 0, weakcount > 1, so there is still other weak_ptrs, we
+        // should release resources
         const_cast<std::remove_const_t<TTarget>*>(target_)->release_resources();
-        should_delete = detail::atomic_weakcount_decrement(target_->weakcount_) == 0;
+        should_delete =
+            detail::atomic_weakcount_decrement(target_->weakcount_) == 0;
       }
       if (should_delete) {
-      // there is no weak_ptrs, so we can safely delete the target
+        // there is no weak_ptrs, so we can safely delete the target
         delete target_;
       }
     }
@@ -135,14 +135,14 @@ private:
       : intrusive_ptr(target, raw::DontIncreaseRefcount{}) {
     if (target != NullType::null()) {
       TORCH_CHECK(
-        target_->refcount_ == 0 and target_->weakcount_ == 0,
-        "intrusive_ptr: newly created target had non-zero refcount or weakcount");
+          target_->refcount_ == 0 and target_->weakcount_ == 0,
+          "intrusive_ptr: newly created target had non-zero refcount or weakcount");
       target_->refcount_.store(1, std::memory_order_relaxed);
       target_->weakcount_.store(1, std::memory_order_relaxed);
     }
   }
 
-public:
+ public:
   intrusive_ptr() noexcept
       : intrusive_ptr(NullType::null(), raw::DontIncreaseRefcount{}) {}
 
@@ -163,7 +163,8 @@ public:
 
   template <class From, class FromNullType>
   intrusive_ptr(const intrusive_ptr<From, FromNullType>& rhs)
-      : target_(detail::assign_ptr_<TTarget, NullType, FromNullType>(rhs.target_)) {
+      : target_(
+            detail::assign_ptr_<TTarget, NullType, FromNullType>(rhs.target_)) {
     static_assert(
         std::is_convertible<From*, TTarget*>::value,
         "Type mismatch in intrusive_ptr copy constructor");
@@ -174,7 +175,7 @@ public:
   // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
   intrusive_ptr& operator=(const intrusive_ptr& rhs) & noexcept {
     // NOLINTNEXTLINE(*assign-operator, *assignment-signature)
-    return operator= <TTarget, NullType>(rhs);
+    return operator=<TTarget, NullType>(rhs);
   }
 
   template <class From, class FromNullType>
@@ -206,7 +207,7 @@ public:
   // move assignment
   intrusive_ptr& operator=(intrusive_ptr&& rhs) & noexcept {
     // NOLINTNEXTLINE(*assign*)
-    return operator= <TTarget, NullType>(std::move(rhs));
+    return operator=<TTarget, NullType>(std::move(rhs));
   }
 
   template <class From, class FromNullType>
@@ -262,8 +263,8 @@ public:
     // 2. refcount > 0
     TORCH_CHECK(
         owning_ptr == NullType::null() or
-        owning_ptr->refcount_.load(std::memory_order_acquire) == 0 or
-        owning_ptr->weakcount_.load(std::memory_order_acquire) > 0,
+            owning_ptr->refcount_.load(std::memory_order_acquire) == 0 or
+            owning_ptr->weakcount_.load(std::memory_order_acquire) > 0,
         "reclaim() received a invalid pointer that refcout > 0 and weakcount == 0");
     return intrusive_ptr(owning_ptr, raw::DontIncreaseRefcount{});
   }
@@ -360,10 +361,40 @@ inline void swap(
   lhs.swap(rhs);
 }
 
+template <typename T>
+struct MaybeOwnedTraits<c10::intrusive_ptr<T>> {
+  using owned_type = c10::intrusive_ptr<T>;
+  using borrow_type = c10::intrusive_ptr<T>;
+
+  static borrow_type createBorrow(const owned_type& from) {
+    return borrow_type::reclaim(from.get());
+  }
+
+  static void assignBorrow(borrow_type& lhs, borrow_type rhs) {
+    lhs.release();
+    lhs = borrow_type::reclaim(rhs.get());
+  }
+
+  static void destroyBorrow(borrow_type& toDestroy) {
+    toDestroy.release();
+  }
+
+  static const owned_type& referenceFromBorrow(const borrow_type& borrow) {
+    return borrow;
+  }
+
+  static const owned_type* pointerFromBorrow(const borrow_type& borrow) {
+    return &borrow;
+  }
+
+  static bool debugBorrowIsValid(const borrow_type& /*borrow*/) {
+    return true;
+  }
+};
 
 template <class TTarget, class NullType>
 class weak_intrusive_ptr final {
-private:
+ private:
   TTarget* target_;
 
   static_assert(
@@ -377,10 +408,10 @@ private:
   void retain_() {
     if (target_ != NullType::null()) {
       uint32_t new_weakcount =
-        detail::atomic_weakcount_increment(target_->weakcount_);
+          detail::atomic_weakcount_increment(target_->weakcount_);
       TORCH_CHECK(
-        new_weakcount != 1,
-        "weak_intrusive_ptr: internal error: retain_() called on a target after it reached 0.");
+          new_weakcount != 1,
+          "weak_intrusive_ptr: internal error: retain_() called on a target after it reached 0.");
     }
   }
 
@@ -393,10 +424,9 @@ private:
 
   explicit weak_intrusive_ptr(TTarget* target) : target_(target) {}
 
-public:
-
+ public:
   explicit weak_intrusive_ptr(const intrusive_ptr<TTarget, NullType>& ptr)
-      : weak_intrusive_ptr(ptr.get()){
+      : weak_intrusive_ptr(ptr.get()) {
     retain_();
   }
 
@@ -411,7 +441,8 @@ public:
 
   template <class From, class FromNullType>
   weak_intrusive_ptr(const weak_intrusive_ptr<From, FromNullType>& rhs)
-      : target_(detail::assign_ptr_<TTarget, NullType, FromNullType>(rhs.target_)) {
+      : target_(
+            detail::assign_ptr_<TTarget, NullType, FromNullType>(rhs.target_)) {
     static_assert(
         std::is_convertible<From*, TTarget*>::value,
         "Type mismatch in weak_intrusive_ptr copy constructor");
@@ -424,7 +455,7 @@ public:
       return *this;
     }
     // NOLINTNEXTLINE(*assign-operator, *assignment-signature)
-    return operator= <TTarget, NullType>(rhs);
+    return operator=<TTarget, NullType>(rhs);
   }
 
   template <class From, class FromNullType>
@@ -456,11 +487,12 @@ public:
   // move assignment
   weak_intrusive_ptr& operator=(weak_intrusive_ptr&& rhs) & noexcept {
     // NOLINTNEXTLINE(*assign*)
-    return operator= <TTarget, NullType>(std::move(rhs));
+    return operator=<TTarget, NullType>(std::move(rhs));
   }
 
   template <class From, class FromNullType>
-  weak_intrusive_ptr& operator=(weak_intrusive_ptr<From, FromNullType>&& rhs) & noexcept {
+  weak_intrusive_ptr& operator=(
+      weak_intrusive_ptr<From, FromNullType>&& rhs) & noexcept {
     static_assert(
         std::is_convertible<From*, TTarget*>::value,
         "Type mismatch in weak_intrusive_ptr move assignment");
@@ -534,11 +566,10 @@ public:
     // raw pointer(refcount == 0, weakcount == 0)
     // owning pointer without weak references (refcount == xx, weakcount == 1)
     TORCH_CHECK(
-      owning_ptr == NullType::null() or
-      owning_ptr->weakcount_.load() > 1 or
-      owning_ptr->refcount_.load() == 0 and
-      owning_ptr->weakcount_.load() > 0,
-      "weak_intrusive_ptr: reclaim() received a invalid pointer");
+        owning_ptr == NullType::null() or owning_ptr->weakcount_.load() > 1 or
+            owning_ptr->refcount_.load() == 0 and
+                owning_ptr->weakcount_.load() > 0,
+        "weak_intrusive_ptr: reclaim() received a invalid pointer");
     return weak_intrusive_ptr(owning_ptr);
   }
 
@@ -557,7 +588,6 @@ public:
   friend bool operator==(
       const weak_intrusive_ptr<TTarget1, NullType1>& lhs,
       const weak_intrusive_ptr<TTarget2, NullType2>& rhs) noexcept;
-
 };
 
 template <class TTarget1, class NullType1, class TTarget2, class NullType2>
@@ -600,8 +630,9 @@ struct hash<c10::intrusive_ptr<TTarget, NullType>> {
 
 template <class TTarget, class NullType>
 struct hash<c10::weak_intrusive_ptr<TTarget, NullType>> {
-  size_t operator()(const c10::weak_intrusive_ptr<TTarget, NullType>& ptr) const {
+  size_t operator()(
+      const c10::weak_intrusive_ptr<TTarget, NullType>& ptr) const {
     return std::hash<TTarget*>()(ptr.unsafe_get_target());
   }
 };
-}
+} // namespace std
