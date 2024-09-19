@@ -2,6 +2,7 @@
 
 #include <c10/util/exception.h>
 #include <c10/util/maybe_owned.h>
+#include <c10/util/macros.h>
 
 #include <atomic>
 #include <cassert>
@@ -15,7 +16,7 @@ struct DontIncreaseRefcount {};
 } // namespace raw
 
 // NOLINTNEXTLINE(cppcoreguidelines-virtual-class-destructor)
-class intrusive_ptr_target {
+class C10_API intrusive_ptr_target {
   mutable std::atomic<uint32_t> refcount_;
   mutable std::atomic<uint32_t> weakcount_;
 
