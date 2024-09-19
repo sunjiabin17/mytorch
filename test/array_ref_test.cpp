@@ -103,4 +103,8 @@ TEST(ArrayRefTEST, test_eq) {
   ASSERT_EQ(ref3 == vec, true);
   ASSERT_EQ(vec == ref3, true);
 
+  std::vector<int64_t> vec2 = {1,2,3,5};
+  ASSERT_EQ(ref1 == vec2, false);
+  ASSERT_EQ(vec2 == ref4, false);
+  ASSERT_EQ(ref2 != vec2, true);
 }
