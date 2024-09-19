@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
-#include <type_traits>
 #include <iostream>
+#include <type_traits>
 #include <vector>
 
 template <class T>
 class ArrayRef {
-public:
+ public:
   /*explicit*/ ArrayRef() {
     std::cout << "ArrayRef()" << std::endl;
   }
@@ -15,8 +15,8 @@ public:
   }
 
   template <class U>
-  std::enable_if_t<std::is_same<T, U>::value, ArrayRef>& operator=(
-      U&& t) = delete;
+  std::enable_if_t<std::is_same<T, U>::value, ArrayRef>& operator=(U&& t) =
+      delete;
 
   template <class U>
   std::enable_if_t<std::is_same<T, U>::value, ArrayRef>& operator=(

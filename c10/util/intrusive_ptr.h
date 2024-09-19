@@ -1,8 +1,8 @@
 #pragma once
 
 #include <c10/util/exception.h>
-#include <c10/util/maybe_owned.h>
 #include <c10/util/macros.h>
+#include <c10/util/maybe_owned.h>
 
 #include <atomic>
 #include <cassert>

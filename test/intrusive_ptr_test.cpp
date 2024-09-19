@@ -4,17 +4,17 @@
 #include <iostream>
 
 class TestClass : public c10::intrusive_ptr_target {
-public:
+ public:
   int a;
   TestClass() : a(0), c10::intrusive_ptr_target() {
-    std::cout <<"TestClass constructor" << std::endl;
+    std::cout << "TestClass constructor" << std::endl;
   }
   TestClass(int a) : a(a), c10::intrusive_ptr_target() {
-    std::cout <<"TestClass constructor" << std::endl;
+    std::cout << "TestClass constructor" << std::endl;
   }
 
   ~TestClass() override {
-    std::cout << "line: " << __LINE__<< " TestClass destructor" << std::endl;
+    std::cout << "line: " << __LINE__ << " TestClass destructor" << std::endl;
   }
 
   void release_resources() override {
@@ -23,13 +23,15 @@ public:
 };
 
 class TestClassNull : public TestClass {
-public:
+ public:
   TestClassNull() {
-    std::cout << "line: " << __LINE__<< " TestClassNull constructor" << std::endl;
+    std::cout << "line: " << __LINE__ << " TestClassNull constructor"
+              << std::endl;
   }
 
   ~TestClassNull() override {
-    std::cout << "line: " << __LINE__<< " TestClassNull destructor" << std::endl;
+    std::cout << "line: " << __LINE__ << " TestClassNull destructor"
+              << std::endl;
   }
   static TestClassNull* null() {
     static TestClassNull* instance = new TestClassNull();
@@ -50,15 +52,16 @@ void print_count(const c10::intrusive_ptr<T, NullType>& ptr) {
 template <typename T, typename NullType>
 void print_count(const c10::weak_intrusive_ptr<T, NullType>& ptr) {
   std::cout << "intrusive_weak_refcount: " << ptr.ref_use_count() << std::endl;
-  std::cout << "intrusive_weak_weakcount: " << ptr.weak_use_count() << std::endl;
+  std::cout << "intrusive_weak_weakcount: " << ptr.weak_use_count()
+            << std::endl;
 }
 
 TEST(IntrusivePtrTEST, test1) {
-  c10::intrusive_ptr<TestClass, TestClassNull> ptr = c10::make_intrusive<TestClass, TestClassNull>();
+  c10::intrusive_ptr<TestClass, TestClassNull> ptr =
+      c10::make_intrusive<TestClass, TestClassNull>();
   print_count(ptr);
   c10::weak_intrusive_ptr<TestClass, TestClassNull> wptr(ptr);
   print_count(wptr);
-
 }
 
 TEST(IntrusivePtrTEST, test2) {
@@ -139,11 +142,11 @@ TEST(IntrusivePtrTEST, test_reclaim_weak) {
   ASSERT_EQ(pw_weak.weak_use_count(), 2);
   ASSERT_EQ(pw_weak.unsafe_get_target(), p);
 
-  auto pw_weak2 = c10::weak_intrusive_ptr<TestClass, TestClassNull>::reclaim_copy(p);
+  auto pw_weak2 =
+      c10::weak_intrusive_ptr<TestClass, TestClassNull>::reclaim_copy(p);
   ASSERT_EQ(pw_weak2.ref_use_count(), 1);
   ASSERT_EQ(pw_weak2.weak_use_count(), 3);
   ASSERT_EQ(pw_weak2.unsafe_get_target(), p);
-
 }
 
 TEST(IntrusivePtrTEST, test_maybe_owned) {
@@ -158,5 +161,4 @@ TEST(IntrusivePtrTEST, test_maybe_owned) {
   print_count(ptr2);
   auto owned = c10::MaybeOwned<decltype(ptr2)>::owned(std::move(ptr2));
   print_count(*owned);
-
 }

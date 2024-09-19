@@ -2,10 +2,9 @@
 
 #include <c10/util/macros.h>
 
-#include <string>
-#include <iostream>
 #include <functional>
-
+#include <iostream>
+#include <string>
 
 namespace c10 {
 

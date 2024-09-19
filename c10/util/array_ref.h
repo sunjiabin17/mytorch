@@ -110,13 +110,13 @@ class ArrayRef final {
 
   constexpr const T& front() const {
     TORCH_CHECK(
-      !empty(), "ArrayRef: attempt to access front() of empty ArrayRef");
+        !empty(), "ArrayRef: attempt to access front() of empty ArrayRef");
     return data_[0];
   }
 
   constexpr const T& back() const {
     TORCH_CHECK(
-      !empty(), "ArrayRef: attempt to access back() of empty ArrayRef");
+        !empty(), "ArrayRef: attempt to access back() of empty ArrayRef");
     return data_[length_ - 1];
   }
 
@@ -126,16 +126,13 @@ class ArrayRef final {
 
   // slice(n, m) - take M elements of the array starting at element N
   constexpr ArrayRef<T> slice(size_t N, size_t M) const {
-    TORCH_CHECK(
-      N + M <= size(),
-      "ArrayRef: slice(n, m) with n + m > size()");
+    TORCH_CHECK(N + M <= size(), "ArrayRef: slice(n, m) with n + m > size()");
     return ArrayRef<T>(data_ + N, M);
   }
 
   // size(n) - chop off the first N elements of the array
   constexpr ArrayRef<T> slice(size_t N) const {
-    TORCH_CHECK(
-      N <= size(), "ArrayRef: slice(n) with n > size()");
+    TORCH_CHECK(N <= size(), "ArrayRef: slice(n) with n > size()");
     return slice(N, size() - N);
   }
 
@@ -144,8 +141,7 @@ class ArrayRef final {
   }
 
   constexpr const T& at(size_t index) const {
-    TORCH_CHECK(
-      index < size(), "ArrayRef: index out of range");
+    TORCH_CHECK(index < size(), "ArrayRef: index out of range");
     return data_[index];
   }
 
@@ -161,7 +157,6 @@ class ArrayRef final {
   std::vector<T> vec() const {
     return std::vector<T>(begin(), end());
   }
-
 };
 
 template <typename T>
@@ -217,7 +212,6 @@ template <typename T, size_t N>
 ArrayRef<T> makeArrayRef(const T (&arr)[N]) {
   return ArrayRef<T>(arr);
 }
-
 
 template <typename T>
 bool operator==(c10::ArrayRef<T> lhs, c10::ArrayRef<T> rhs) {

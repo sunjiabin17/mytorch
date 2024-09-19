@@ -1,13 +1,13 @@
 #include <c10/util/maybe_owned.h>
 #include <gtest/gtest.h>
 
+#include <iostream>
 #include <memory>
 #include <type_traits>
 #include <utility>
-#include <iostream>
 
 class TestClass1 {
-public:
+ public:
   float x;
   TestClass1() : x(1.23) {
     std::cout << "TestClass1 constructor" << std::endl;
@@ -42,7 +42,6 @@ TEST(MaybeOwnedTest, test1) {
   std::cout << maybe_owned3->use_count() << std::endl;
   std::cout << (*maybe_owned3)->x << std::endl;
   ASSERT_EQ((*maybe_owned3)->x, static_cast<float>(1.23));
-
 }
 
 TEST(MaybeOwnedTest, test2) {
@@ -61,7 +60,6 @@ TEST(MaybeOwnedTest, test2) {
 
   maybe_owned_move.~MaybeOwned();
   std::cout << maybe_owned_copy->use_count() << std::endl;
-
 }
 
 TEST(MaybeOwnedTest, test3) {
@@ -88,7 +86,6 @@ TEST(MaybeOwnedTest, test5) {
   ASSERT_EQ(borrowed.unsafeIsBorrowed(), false);
 }
 
-
 TEST(MaybeOwnedTest, test6) {
   auto p = std::make_shared<TestClass1>();
   auto owned = c10::MaybeOwned<decltype(p)>::owned(std::move(p));
@@ -110,6 +107,5 @@ TEST(MaybeOwnedTest, test7) {
   borrowed = std::move(owned);
   ASSERT_EQ(borrowed.unsafeIsBorrowed(), false);
 }
-
 
 // NOLINTEND

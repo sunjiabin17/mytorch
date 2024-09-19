@@ -3,9 +3,9 @@
 
 #include <array>
 #include <initializer_list>
-#include <vector>
 #include <iostream>
 #include <type_traits>
+#include <vector>
 
 TEST(ArrayRefTEST, test_ctor) {
   c10::IntArrayRef ref;
@@ -15,11 +15,10 @@ TEST(ArrayRefTEST, test_ctor) {
   c10::IntArrayRef ref1(1);
   ASSERT_EQ(ref1.size(), 1);
   ASSERT_EQ(*ref1.data(), 1);
-
 }
 
 TEST(ArrayRefTEST, test_ctor2) {
-  std::vector<int64_t> vec{1,2,3,4};
+  std::vector<int64_t> vec{1, 2, 3, 4};
   c10::IntArrayRef ref(vec.data(), vec.size());
 
   ASSERT_EQ(ref.size(), 4);
@@ -42,7 +41,7 @@ TEST(ArrayRefTEST, test_ctor2) {
 }
 
 TEST(ArrayRefTEST, test_make_array_ref) {
-  std::array<int64_t, 4> arr = {1,2,3,4};
+  std::array<int64_t, 4> arr = {1, 2, 3, 4};
   c10::IntArrayRef ref = c10::makeArrayRef(arr);
 
   ASSERT_EQ(ref.size(), 4);
@@ -54,8 +53,9 @@ TEST(ArrayRefTEST, test_make_array_ref) {
   ASSERT_EQ(ref.at(2), 3);
   ASSERT_EQ(ref.at(3), 4);
 
-  std::vector<int64_t> vec = {1,2,3,4};
-  c10::IntArrayRef ref2 = c10::makeArrayRef(vec.data(), vec.data() + vec.size());
+  std::vector<int64_t> vec = {1, 2, 3, 4};
+  c10::IntArrayRef ref2 =
+      c10::makeArrayRef(vec.data(), vec.data() + vec.size());
 
   ASSERT_EQ(ref2.size(), 4);
   ASSERT_EQ(ref2.data(), vec.data());
@@ -69,7 +69,7 @@ TEST(ArrayRefTEST, test_make_array_ref) {
 
 TEST(ArrayRefTEST, test_forloop) {
   // NOLINTNEXTLINE(*c-arrays)
-  int64_t arr[] = {1,2,3,4};
+  int64_t arr[] = {1, 2, 3, 4};
   c10::IntArrayRef ref(arr);
 
   ASSERT_EQ(ref.size(), 4);
@@ -79,13 +79,12 @@ TEST(ArrayRefTEST, test_forloop) {
   }
 }
 
-
 TEST(ArrayRefTEST, test_eq) {
   // NOLINTNEXTLINE(*c-arrays)
-  int64_t arr[] = {1,2,3,4};
-  std::vector<int64_t> vec = {1,2,3,4};
-  std::array<int64_t, 4> stdarr = {1,2,3,4};
-  std::initializer_list<int64_t> il = {1,2,3,4};
+  int64_t arr[] = {1, 2, 3, 4};
+  std::vector<int64_t> vec = {1, 2, 3, 4};
+  std::array<int64_t, 4> stdarr = {1, 2, 3, 4};
+  std::initializer_list<int64_t> il = {1, 2, 3, 4};
 
   c10::IntArrayRef ref1(arr);
   c10::IntArrayRef ref2(vec);
@@ -103,7 +102,7 @@ TEST(ArrayRefTEST, test_eq) {
   ASSERT_EQ(ref3 == vec, true);
   ASSERT_EQ(vec == ref3, true);
 
-  std::vector<int64_t> vec2 = {1,2,3,5};
+  std::vector<int64_t> vec2 = {1, 2, 3, 5};
   ASSERT_EQ(ref1 == vec2, false);
   ASSERT_EQ(vec2 == ref4, false);
   ASSERT_EQ(ref2 != vec2, true);
