@@ -24,6 +24,7 @@ option(BUILD_TEST "Build the test" ON)
 cmake_dependent_option(INSTALL_TEST "Install the test" ON "BUILD_TEST" OFF)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(BEFORE ${PROJECT_SOURCE_DIR}/aten/src)
 
 if(BUILD_TEST)
   add_subdirectory(third_party/googletest)
@@ -31,3 +32,4 @@ if(BUILD_TEST)
 endif()
 
 add_subdirectory(c10)
+add_subdirectory(aten)
