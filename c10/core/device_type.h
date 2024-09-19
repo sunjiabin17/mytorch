@@ -11,6 +11,7 @@ namespace c10 {
 enum class DeviceType : uint8_t {
   CPU = 0,
   CUDA = 1,
+  MAX_DEVICE_TYPES = 2,
 };
 
 constexpr DeviceType kCPU = DeviceType::CPU;
