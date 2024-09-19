@@ -1,5 +1,5 @@
-#include <c10/core/device.h>
-#include <c10/core/device_type.h>
+#include <c10/core/Device.h>
+#include <c10/core/DeviceType.h>
 #include <gtest/gtest.h>
 
 #include <iostream>

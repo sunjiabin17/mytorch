@@ -1,5 +1,5 @@
-#include <c10/util/exception.h>
-#include <c10/util/string_util.h>
+#include <c10/util/Exception.h>
+#include <c10/util/StringUtil.h>
 #include <string>
 
 namespace c10 {

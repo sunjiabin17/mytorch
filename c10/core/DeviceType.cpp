@@ -1,4 +1,4 @@
-#include <c10/core/device_type.h>
+#include <c10/core/DeviceType.h>
 
 namespace c10 {
 

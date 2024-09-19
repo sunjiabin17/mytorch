@@ -1,4 +1,4 @@
-#include <c10/core/device.h>
+#include <c10/core/Device.h>
 
 #include <algorithm>
 #include <array>

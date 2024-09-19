@@ -1,7 +1,7 @@
 #pragma once
 
-#include <c10/util/macros.h>
-#include <c10/util/string_util.h>
+#include <c10/util/Macros.h>
+#include <c10/util/StringUtil.h>
 
 #include <exception>
 #include <string>

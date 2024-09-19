@@ -1,7 +1,7 @@
 #pragma once
 
-#include <c10/core/tensor_impl.h>
-#include <c10/util/macros.h>
+#include <c10/core/TensorImpl.h>
+#include <c10/util/Macros.h>
 
 namespace c10 {
 

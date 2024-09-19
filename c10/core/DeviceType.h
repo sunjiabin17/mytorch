@@ -1,6 +1,6 @@
 #pragma once
 
-#include <c10/util/macros.h>
+#include <c10/util/Macros.h>
 
 #include <functional>
 #include <iostream>

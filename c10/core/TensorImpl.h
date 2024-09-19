@@ -1,9 +1,9 @@
 #pragma once
 
-#include <c10/core/device.h>
-#include <c10/core/device_type.h>
-#include <c10/util/exception.h>
-#include <c10/util/intrusive_ptr.h>
+#include <c10/core/Device.h>
+#include <c10/core/DeviceType.h>
+#include <c10/util/Exception.h>
+#include <c10/util/IntrusivePtr.h>
 
 #include <algorithm>
 #include <atomic>
@@ -42,7 +42,6 @@ struct C10_API TensorImpl : public c10::intrusive_ptr_target {
   ~TensorImpl() override;
 
   enum ImplType { VIEW };
-  
 };
 
 } // namespace c10

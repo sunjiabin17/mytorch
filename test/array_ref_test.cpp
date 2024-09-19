@@ -1,4 +1,4 @@
-#include <c10/util/array_ref.h>
+#include <c10/util/ArrayRef.h>
 #include <gtest/gtest.h>
 
 #include <array>

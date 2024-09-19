@@ -1,7 +1,7 @@
 #pragma once
 
-#include <c10/core/device_type.h>
-#include <c10/util/exception.h>
+#include <c10/core/DeviceType.h>
+#include <c10/util/Exception.h>
 
 #include <functional>
 #include <ostream>
