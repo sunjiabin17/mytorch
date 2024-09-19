@@ -3,6 +3,7 @@
 #include <c10/core/device_type.h>
 #include <c10/util/exception.h>
 
+#include <functional>
 #include <ostream>
 #include <string>
 
@@ -76,3 +77,19 @@ struct Device final {
 C10_API std::ostream& operator<<(std::ostream& stream, const Device& device);
 
 } // namespace c10
+
+namespace std {
+template <>
+struct hash<c10::Device> {
+  size_t operator()(const c10::Device& x) const {
+    static_assert(sizeof(c10::DeviceType) == 1, "DeviceType is not 8-bit");
+    static_assert(sizeof(c10::DeviceIndex) == 1, "DeviceIndex is not 8-bit");
+
+    uint32_t bits = static_cast<uint32_t>(static_cast<uint8_t>(x.type()))
+            << 16 |
+        static_cast<uint32_t>(static_cast<uint8_t>(x.index()));
+    return std::hash<uint32_t>()(bits);
+  }
+};
+
+} // namespace std
