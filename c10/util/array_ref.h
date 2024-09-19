@@ -62,7 +62,11 @@ class ArrayRef final {
   constexpr ArrayRef(const std::array<T, N>& arr)
       : data_(arr.data()), length_(N) {}
 
-  constexpr ArrayRef(std::initializer_list<T>& vec)
+  template <size_t N>
+  // NOLINTNEXTLINE(*c-arrays*)
+  constexpr ArrayRef(const T (&arr)[N]) : data_(arr), length_(N) {}
+
+  constexpr ArrayRef(const std::initializer_list<T>& vec)
       : data_(
             std::begin(vec) == std::end(vec) ? static_cast<T*>(nullptr)
                                              : std::begin(vec)),
@@ -145,14 +149,105 @@ class ArrayRef final {
     return data_[index];
   }
 
+  template <typename U>
+  std::enable_if_t<std::is_same_v<T, U>, ArrayRef<T>>& operator=(
+      // NOLINTNEXTLINE(performance-noexcept-move-constructor)
+      U&&) = delete;
+
+  template <typename U>
+  std::enable_if_t<std::is_same_v<T, U>, ArrayRef<T>>& operator=(
+      std::initializer_list<U>) = delete;
+
   std::vector<T> vec() const {
     return std::vector<T>(begin(), end());
   }
 
-  
-
-
-
 };
 
+template <typename T>
+std::ostream& operator<<(std::ostream& out, ArrayRef<T> ref) {
+  int i = 0;
+  out << '[';
+  for (const auto& e : ref) {
+    if (i++ > 0)
+      out << ", ";
+    out << e;
+  }
+  out << ']';
+  return out;
+}
+
+template <typename T>
+ArrayRef<T> makeArrayRef(const T& OneElt) {
+  return OneElt;
+}
+
+template <typename T>
+ArrayRef<T> makeArrayRef(const T* data, size_t length) {
+  return ArrayRef<T>(data, length);
+}
+
+template <typename T>
+ArrayRef<T> makeArrayRef(const T* begin, const T* end) {
+  return ArrayRef<T>(begin, end);
+}
+
+template <typename T>
+ArrayRef<T> makeArrayRef(const std::vector<T>& vec) {
+  return ArrayRef<T>(vec);
+}
+
+template <typename T, size_t N>
+ArrayRef<T> makeArrayRef(const std::array<T, N>& arr) {
+  return ArrayRef<T>(arr);
+}
+
+template <typename T>
+ArrayRef<T> makeArrayRef(const ArrayRef<T>& ref) {
+  return ref;
+}
+
+template <typename T>
+ArrayRef<T> makeArrayRef(ArrayRef<T>& ref) {
+  return ref;
+}
+
+template <typename T, size_t N>
+// NOLINTNEXTLINE(*c-arrays*)
+ArrayRef<T> makeArrayRef(const T (&arr)[N]) {
+  return ArrayRef<T>(arr);
+}
+
+
+template <typename T>
+bool operator==(c10::ArrayRef<T> lhs, c10::ArrayRef<T> rhs) {
+  return lhs.equals(rhs);
+}
+
+template <typename T>
+bool operator!=(c10::ArrayRef<T> lhs, c10::ArrayRef<T> rhs) {
+  return !lhs.equals(rhs);
+}
+
+template <typename T>
+bool operator==(const std::vector<T>& lhs, c10::ArrayRef<T> rhs) {
+  return c10::ArrayRef<T>(lhs).equals(rhs);
+}
+
+template <typename T>
+bool operator!=(const std::vector<T>& lhs, c10::ArrayRef<T> rhs) {
+  return !c10::ArrayRef<T>(lhs).equals(rhs);
+}
+
+template <typename T>
+bool operator==(c10::ArrayRef<T> lhs, const std::vector<T>& rhs) {
+  return lhs.equals(c10::ArrayRef<T>(rhs));
+}
+
+template <typename T>
+bool operator!=(c10::ArrayRef<T> lhs, const std::vector<T>& rhs) {
+  return !lhs.equals(c10::ArrayRef<T>(rhs));
+}
+
+using IntArrayRef = ArrayRef<int64_t>;
 } // namespace c10

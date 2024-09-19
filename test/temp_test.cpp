@@ -6,11 +6,11 @@
 template <class T>
 class ArrayRef {
 public:
-  explicit ArrayRef() {
+  /*explicit*/ ArrayRef() {
     std::cout << "ArrayRef()" << std::endl;
   }
 
-  explicit ArrayRef(int) {
+  /*explicit*/ ArrayRef(int) {
     std::cout << "ArrayRef(int)" << std::endl;
   }
 
