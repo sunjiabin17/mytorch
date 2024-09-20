@@ -27,10 +27,14 @@ enum class DispatchKey : uint16_t {
   Undefined = 0,
   CatchAll = Undefined,
 
+  // Per-Backend Functionality Key
   Dense,
+
+  BackendSelect,
 
   ADInplaceOrView,
 
+  // Per-Backend Functionality Key
   AutogradFunctionality,
 
   AutocastCPU,
@@ -53,6 +57,70 @@ enum class DispatchKey : uint16_t {
 
       EndOfRuntimeBackendKeys = EndOfAutogradFunctionalityBackends,
 
+  // Alias Dispatch Keys
+  Autograd,
+  CompositeImplicitAutograd,
+  CompositeExplicitAutograd,
+  
+  StartOfAliasKeys = Autograd,
+  EndOfAliasKeys = CompositeExplicitAutograd,
 };
+
+constexpr bool isPerBackendFunctionalityKey(DispatchKey k) {
+  if (k == DispatchKey::Dense or k == DispatchKey::AutogradFunctionality) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+constexpr uint8_t num_functionality_keys =
+    static_cast<uint8_t>(DispatchKey::EndOfFunctionlityKeys);
+
+constexpr uint8_t num_backends =
+    static_cast<uint8_t>(BackendComponent::EndOfBackendKeys);
+
+constexpr uint8_t numPerBackendFunctionalityKeys() {
+  uint8_t count = 0;
+  for (uint8_t k = 0; k <= num_functionality_keys; k++) {
+    if (isPerBackendFunctionalityKey(static_cast<DispatchKey>(k))) {
+      count++;
+    }
+  }
+  return count;
+}
+
+constexpr uint16_t full_backend_mask =
+    (static_cast<uint16_t>(1) << num_backends) - 1;
+
+constexpr BackendComponent toBackendComponent(DispatchKey k) {
+  if (k >= DispatchKey::StartOfDenseBackends and
+      k <= DispatchKey::EndOfDenseBackends) {
+    return static_cast<BackendComponent>(
+        static_cast<uint8_t>(k) -
+        static_cast<uint8_t>(DispatchKey::StartOfDenseBackends));
+  } else if (
+      k >= DispatchKey::StartOfAutogradFunctionalityBackends and
+      k <= DispatchKey::EndOfAutogradFunctionalityBackends) {
+    return static_cast<BackendComponent>(
+        static_cast<uint8_t>(k) -
+        static_cast<uint8_t>(
+            DispatchKey::StartOfAutogradFunctionalityBackends));
+  } else {
+    return BackendComponent::InvalidBit;
+  }
+}
+
+constexpr DispatchKey toFunctionalityKey(DispatchKey k) {
+  if (k <= DispatchKey::EndOfFunctionlityKeys) {
+    return k;
+  } else if (k <= DispatchKey::EndOfDenseBackends) {
+    return DispatchKey::Dense;
+  } else if (k <= DispatchKey::EndOfAutogradFunctionalityBackends) {
+    return DispatchKey::AutogradFunctionality;
+  } else {
+    return DispatchKey::Undefined;
+  }
+}
 
 } // namespace c10
