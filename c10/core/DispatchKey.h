@@ -1,5 +1,7 @@
 #pragma once
 
+#include <c10/core/DeviceType.h>
+
 #include <functional>
 #include <ostream>
 #include <string>
@@ -11,7 +13,7 @@ namespace c10 {
   _(Meta, extra)
 
 #define C10_FORALL_FUNCTIONALITY_KEYS(_) \
-  _(Dense, )                             \
+  _(Dense, Dense)                        \
   _(AutogradFunctionality, Autograd)
 
 enum class BackendComponent : uint8_t {
@@ -61,7 +63,7 @@ enum class DispatchKey : uint16_t {
   Autograd,
   CompositeImplicitAutograd,
   CompositeExplicitAutograd,
-  
+
   StartOfAliasKeys = Autograd,
   EndOfAliasKeys = CompositeExplicitAutograd,
 };
@@ -123,4 +125,34 @@ constexpr DispatchKey toFunctionalityKey(DispatchKey k) {
   }
 }
 
+BackendComponent toBackendComponent(DeviceType device_type);
+
+constexpr DispatchKey toRuntimePerBackendFunctionalityKey(
+    DispatchKey functionality_k,
+    BackendComponent backend_k) {
+  if (functionality_k == DispatchKey::Dense) {
+    return static_cast<DispatchKey>(
+        static_cast<uint8_t>(DispatchKey::StartOfDenseBackends) +
+        static_cast<uint8_t>(backend_k));
+  } else if (functionality_k == DispatchKey::AutogradFunctionality) {
+    return static_cast<DispatchKey>(
+        static_cast<uint8_t>(
+            DispatchKey::StartOfAutogradFunctionalityBackends) +
+        static_cast<uint8_t>(backend_k));
+  } else {
+    return DispatchKey::Undefined;
+  }
+}
+
 } // namespace c10
+
+
+namespace std {
+template <>
+struct hash<c10::DispatchKey> {
+  size_t operator()(c10::DispatchKey x) const {
+    return static_cast<size_t>(x);
+  }
+};
+
+} // namespace std

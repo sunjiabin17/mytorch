@@ -166,8 +166,7 @@ class DispatchKeySet final {
 
   uint8_t indexOfHighestBit() const {
     static_assert(
-        std::is_integral_v<decltype(repr_)> and
-            std::is_unsigned_v<decltype(repr_)>,
+        std::is_same_v<uint64_t, decltype(repr_)>,
         "indexOfHighestBit only works on unsigned integral types");
     return 64 - __builtin_clzll(repr_);
   }
