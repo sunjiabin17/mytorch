@@ -15,6 +15,26 @@
 #include <vector>
 
 namespace c10 {
+
+struct FunctionalityOffsetAndMask {
+  FunctionalityOffsetAndMask() = default;
+  FunctionalityOffsetAndMask(uint8_t offset, uint64_t mask)
+      : offset(offset), mask(mask) {}
+
+  uint16_t offset{};
+  uint64_t mask{};
+};
+
+C10_API std::array<FunctionalityOffsetAndMask, num_functionality_keys>
+initializeFunctionalityOffsetsAndMasks();
+
+C10_ALWAYS_INLINE static const std::
+    array<FunctionalityOffsetAndMask, num_functionality_keys>&
+    offsetsAndMasks() {
+  static auto offsets_and_masks = initializeFunctionalityOffsetsAndMasks();
+  return offsets_and_masks;
+}
+
 class DispatchKeySet final {
  public:
   enum Full { FULL };
@@ -188,9 +208,125 @@ class DispatchKeySet final {
     return static_cast<BackendComponent>(backend_idx);
   }
 
+  int getDispatchTableIndexForDispatchKeySet() const {
+    auto functionality_idx = static_cast<uint8_t>(highestFunctionalityKey());
+    TORCH_CHECK(
+        functionality_idx >= 0 and functionality_idx < num_functionality_keys,
+        "functionality_idx must be non-negative");
+    auto offset_and_mask = offsetsAndMasks()[functionality_idx];
+    // Mask the functionality bits out first, then right-shift by 1.
+    // right-shifting by 1 because everything is zero-indexed.
+    // E.g. 000001 (CPU) should give us an offset of 0, 000010 (CUDA) should
+    // give us an offset of 1, etc.
+    auto backend_idx =
+        DispatchKeySet((repr_ & offset_and_mask.mask) >> 1).indexOfHighestBit();
+    return offset_and_mask.offset + backend_idx;
+  }
+
+  // returns the "index" of the highest priority backend in the keyset.
+  // This is pretty similar to getBackendKey(), but:
+  // - It's hotpath code (part of the runtime bitset calculation)
+  // - I's returns an integer index, not an enum value
+  // - Everything is shifted to the right by 1.
+  //   BackendComponent::InvalidBit is technically the lowest enum value,
+  //   but it isn't included in the runtime table. So CPUBit = 1, CUDABit = 2,
+  //   etc.
+  uint64_t getBackendIndex() const {
+    return DispatchKeySet((repr_ & full_backend_mask) >> 1).indexOfHighestBit();
+  }
+
  private:
   uint64_t repr_ = 0;
   constexpr DispatchKeySet(uint64_t repr) : repr_(repr) {}
+
+ public:
+  // iterator for DispatchKeySet
+  class iterator {
+   public:
+    using self_type = iterator;
+    using iterator_category = std::input_iterator_tag;
+    using value_type = DispatchKey;
+    using difference_type = std::ptrdiff_t;
+    using reference = value_type&;
+    using pointer = value_type*;
+
+    static const uint8_t end_iter_val = num_backends + num_functionality_keys;
+    static const uint8_t end_iter_key_val = num_functionality_keys;
+
+    explicit iterator(
+        const uint64_t* data_ptr,
+        uint8_t next_functionality = num_backends,
+        uint8_t next_backend = 0)
+        : data_ptr_(data_ptr),
+          next_functionality_(next_functionality),
+          next_backend_(next_backend),
+          current_dispatchkey_idx_(end_iter_val),
+          current_backendcomponent_idx_(end_iter_key_val) {
+      TORCH_CHECK(
+          next_functionality_ >= num_backends,
+          "num_backends=",
+          static_cast<uint32_t>(num_backends),
+          " next_functionality_=",
+          static_cast<uint32_t>(next_functionality_));
+
+      ++(*this);
+    }
+
+    C10_API self_type& operator++();
+
+    self_type operator++(int) {
+      self_type i = *this;
+      ++(*this);
+      return i;
+    }
+
+    bool operator==(const self_type& rhs) const {
+      return next_functionality_ == rhs.next_functionality_ and
+          current_dispatchkey_idx_ == rhs.current_dispatchkey_idx_ and
+          next_backend_ == rhs.next_backend_ and
+          current_backendcomponent_idx_ == rhs.current_backendcomponent_idx_;
+    }
+
+    bool operator!=(const self_type& rhs) const {
+      return next_functionality_ != rhs.next_functionality_ or
+          current_dispatchkey_idx_ != rhs.current_dispatchkey_idx_ or
+          next_backend_ != rhs.next_backend_ or
+          current_backendcomponent_idx_ != rhs.current_backendcomponent_idx_;
+    }
+
+    DispatchKey operator*() const {
+      auto functionality_key =
+          static_cast<DispatchKey>(current_dispatchkey_idx_);
+      if (isPerBackendFunctionalityKey(functionality_key)) {
+        auto next_key = toRuntimePerBackendFunctionalityKey(
+            functionality_key,
+            static_cast<BackendComponent>(current_backendcomponent_idx_));
+        TORCH_CHECK(
+            toBackendComponent(next_key) ==
+                static_cast<BackendComponent>(current_backendcomponent_idx_),
+            "BackendComponent mismatch");
+        return next_key;
+      } else {
+        return functionality_key;
+      }
+    }
+
+   private:
+    const uint64_t* data_ptr_;
+    uint8_t next_functionality_;
+    uint8_t next_backend_;
+    uint8_t current_dispatchkey_idx_;
+    uint8_t current_backendcomponent_idx_;
+  };
+
+ public:
+  iterator begin() const {
+    return iterator(&repr_);
+  }
+
+  iterator end() const {
+    return iterator(&repr_, iterator::end_iter_val);
+  }
 };
 
 } // namespace c10

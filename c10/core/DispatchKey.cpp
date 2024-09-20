@@ -4,8 +4,6 @@
 #include <c10/core/DeviceType.h>
 namespace c10 {
 
-
-
 BackendComponent toBackendComponent(DeviceType device_type) {
   switch (device_type) {
     case DeviceType::CPU:

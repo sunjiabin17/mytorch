@@ -95,6 +95,9 @@ constexpr uint8_t numPerBackendFunctionalityKeys() {
 constexpr uint16_t full_backend_mask =
     (static_cast<uint16_t>(1) << num_backends) - 1;
 
+constexpr uint16_t num_runtime_entries = num_functionality_keys +
+    (numPerBackendFunctionalityKeys() * (num_backends - 1));
+
 constexpr BackendComponent toBackendComponent(DispatchKey k) {
   if (k >= DispatchKey::StartOfDenseBackends and
       k <= DispatchKey::EndOfDenseBackends) {
@@ -145,7 +148,6 @@ constexpr DispatchKey toRuntimePerBackendFunctionalityKey(
 }
 
 } // namespace c10
-
 
 namespace std {
 template <>
