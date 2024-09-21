@@ -37,7 +37,7 @@ T maskLeadingZeros(unsigned N) {
 }
 
 template <typename T, std::size_t N>
-struct CountTrailingZeros {
+struct TrailingZerosCounter {
   // static std::size_t count(T val) {
   //   static_assert(false, "Unsupported type");
   //   return 0;
@@ -45,16 +45,38 @@ struct CountTrailingZeros {
 };
 
 template <typename T>
-struct CountTrailingZeros<T, 4> {
+struct TrailingZerosCounter<T, 4> {
   static std::size_t count(T val) {
     return val == 0 ? 32 : __builtin_ctz(val);
   }
 };
 
 template <typename T>
-struct CountTrailingZeros<T, 8> {
+struct TrailingZerosCounter<T, 8> {
   static std::size_t count(T val) {
     return val == 0 ? 64 : __builtin_ctzll(val);
+  }
+};
+
+template <typename T, std::size_t N>
+struct LeadingZerosCounter {
+  // static std::size_t count(T val) {
+  //   static_assert(false, "Unsupported type");
+  //   return 0;
+  // }
+};
+
+template <typename T>
+struct LeadingZerosCounter<T, 4> {
+  static std::size_t count(T val) {
+    return val == 0 ? 32 : __builtin_clz(val);
+  }
+};
+
+template <typename T>
+struct LeadingZerosCounter<T, 8> {
+  static std::size_t count(T val) {
+    return val == 0 ? 64 : __builtin_clzll(val);
   }
 };
 
@@ -63,7 +85,15 @@ std::size_t countTrailingZeros(T val) {
   static_assert(
       std::is_integral_v<T> and std::is_unsigned_v<T>,
       "Only unsigned integral types are supported");
-  return CountTrailingZeros<T, sizeof(T)>::count(val);
+  return TrailingZerosCounter<T, sizeof(T)>::count(val);
+}
+
+template <typename T>
+std::size_t countLeadingZeros(T val) {
+  static_assert(
+      std::is_integral_v<T> and std::is_unsigned_v<T>,
+      "Only unsigned integral types are supported");
+  return LeadingZerosCounter<T, sizeof(T)>::count(val);
 }
 
 template <typename T>

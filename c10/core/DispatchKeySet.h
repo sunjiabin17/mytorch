@@ -1,6 +1,7 @@
 #include <c10/core/Device.h>
 #include <c10/core/DeviceType.h>
 #include <c10/core/DispatchKey.h>
+#include <c10/util/BitsUtil.h>
 #include <c10/util/Exception.h>
 #include <c10/util/Macros.h>
 #include <c10/util/MaybeOwned.h>
@@ -188,7 +189,7 @@ class DispatchKeySet final {
     static_assert(
         std::is_same_v<uint64_t, decltype(repr_)>,
         "indexOfHighestBit only works on unsigned integral types");
-    return 64 - __builtin_clzll(repr_);
+    return 64 - detail::countLeadingZeros(repr_);
   }
 
   DispatchKey highestFunctionalityKey() const {
