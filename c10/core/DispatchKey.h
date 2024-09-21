@@ -147,6 +147,11 @@ constexpr DispatchKey toRuntimePerBackendFunctionalityKey(
   }
 }
 
+C10_API std::string toString(DispatchKey);
+C10_API std::string toString(BackendComponent);
+C10_API std::ostream& operator<<(std::ostream&, DispatchKey);
+C10_API std::ostream& operator<<(std::ostream&, BackendComponent);
+
 } // namespace c10
 
 namespace std {
