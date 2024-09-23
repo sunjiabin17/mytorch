@@ -11,3 +11,5 @@
 #define TORCH_API C10_VISIBILE
 
 #define C10_ALWAYS_INLINE __attribute__((__always_inline__)) inline
+
+#define C10_ANONYMOUS_VARIABLE(str) str##__COUNTER__

@@ -8,12 +8,14 @@ file(GLOB C10_SRCS
         "*.cpp"
         "util/*.cpp"
         "core/*.cpp"
+        "core/impl/*.cpp"
     )
 
 file(GLOB C10_HEADERS
         "*.h"
         "util/*.h"
         "core/*.h"
+        "core/impl/*.h"
     )
 
 add_library(c10 ${C10_SRCS} ${C10_HEADERS})
