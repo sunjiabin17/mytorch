@@ -22,7 +22,7 @@ class InlineDeviceGuard {
 
   template <
       typename U = T,
-      typename std::enable_if_t<std::is_same_v<U, VirtualGuardImpl>>>
+      typename = typename std::enable_if_t<std::is_same_v<U, VirtualGuardImpl>>>
   explicit InlineDeviceGuard(
       Device device,
       const DeviceGuardImplInterface* impl)
