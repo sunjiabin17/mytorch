@@ -45,3 +45,5 @@ namespace detail {
         static_cast<uint32_t>(__LINE__),    \
         CheckMsg(cond, "", ##__VA_ARGS__)); \
   }
+
+#define TORCH_INTERNAL_ASSERT(cond) TORCH_CHECK(cond, #cond)
