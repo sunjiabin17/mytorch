@@ -4,13 +4,14 @@ project(MyTorch CXX C)
 
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "The C++ standard whose features are requested.")
 set(CMAKE_C_STANDARD 11 CACHE STRING "The C standard whose features are requested.")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 include(CMakeDependentOption)
 
 option(DEBUG "Enable debug symbols" ON)
 if(DEBUG)
   set(CMAKE_BUILD_TYPE Debug)
-  set(CMAKE_CXX_FLAGS "-g -O0")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
   add_compile_definitions(DEBUG)
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 else()
