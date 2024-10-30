@@ -287,4 +287,44 @@ struct alignas(2) Half {
 #endif
 };
 
+C10_API inline std::ostream& operator<<(
+    std::ostream& stream,
+    const Half& value) {
+  return stream << static_cast<float>(value);
+}
+
+inline C10_HOST_DEVICE Half::Half(float value)
+    : x(detail::fp16_from_fp32_value(value)) {}
+
+inline C10_HOST_DEVICE Half::operator float() const {
+  return detail::fp16_to_fp32_value(x);
+}
+
+#if defined(__CUDACC__)
+inline C10_HOST_DEVICE Half::Half(const __half& value) {
+  x = *reinterpret_cast<const unsigned short*>(&value);
+}
+inline C10_HOST_DEVICE Half::operator __half() const {
+  return *reinterpret_cast<const __half*>(&x);
+}
+#endif
+
+inline C10_HOST_DEVICE Half operator+(const Half& a, const Half& b) {
+  return static_cast<float>(a) + static_cast<float>(b);
+}
+
+inline C10_HOST_DEVICE Half operator-(const Half& a, const Half& b) {
+  return static_cast<float>(a) - static_cast<float>(b);
+}
+
+inline C10_HOST_DEVICE Half operator*(const Half& a, const Half& b) {
+  return static_cast<float>(a) * static_cast<float>(b);
+}
+
+inline C10_HOST_DEVICE Half operator/(const Half& a, const Half& b) {
+  return static_cast<float>(a) / static_cast<float>(b);
+}
+
+// [TODO]
+
 } // namespace c10
