@@ -296,6 +296,10 @@ class intrusive_ptr final {
       return target_->weakcount_.load(std::memory_order_acquire);
     }
   }
+
+  bool unique() const noexcept {
+    return ref_use_count() == 1;
+  }
 };
 
 template <
@@ -393,7 +397,7 @@ struct MaybeOwnedTraits<c10::intrusive_ptr<T>> {
   }
 };
 
-template <class TTarget, class NullType>
+template <class TTarget, class NullType = detail::intrusive_default_null<TTarget>>
 class weak_intrusive_ptr final {
  private:
   TTarget* target_;

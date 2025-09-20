@@ -23,3 +23,6 @@
 #define C10_HOST_DEVICE
 #define C10_HOST
 #define C10_DEVICE
+
+#define C10_STRINGIZE_IMPL(x) #x
+#define C10_STRINGIZE(x) C10_STRINGIZE_IMPL(x)

@@ -25,6 +25,15 @@ void myCheckFail(
   throw Error(func, file, line, msg);
 }
 
+void myInternalAssertFail(
+    const char* func,
+    const char* file,
+    uint32_t line,
+    const std::string& msg,
+    const std::string& userMsg) {
+  myCheckFail(func, file, line, c10::str(msg, userMsg));
+}
+
 } // namespace detail
 
 } // namespace c10
