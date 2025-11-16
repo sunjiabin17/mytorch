@@ -19,7 +19,7 @@ class C10_API DataPtr {
  public:
   DataPtr() : device_(DeviceType::CPU) {}
   DataPtr(void* data, Device device) : data_ptr_(data), device_(device) {}
-  DataPtr(void* data, void* ctx, DeleterFnPtr deleter,  Device device)
+  DataPtr(void* data, void* ctx, DeleterFnPtr deleter, Device device)
       : data_ptr_(data, ctx, deleter), device_(device) {}
 
   void* operator->() const {

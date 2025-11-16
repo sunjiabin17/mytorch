@@ -2,7 +2,6 @@
 
 #include <c10/core/Allocator.h>
 
-
 namespace c10 {
 
 C10_API c10::Allocator* GetCPUAllocator();

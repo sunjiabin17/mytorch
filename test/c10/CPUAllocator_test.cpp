@@ -1,7 +1,7 @@
-#include <gtest/gtest.h>
-#include <c10/cpu/CPUAllocator.h>
 #include <c10/core/Allocator.h>
 #include <c10/core/DeviceType.h>
+#include <c10/cpu/CPUAllocator.h>
+#include <gtest/gtest.h>
 
 TEST(CPUAllocator, get) {
   using namespace c10;

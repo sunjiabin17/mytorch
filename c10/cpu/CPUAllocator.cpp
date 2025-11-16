@@ -1,7 +1,7 @@
 #include <c10/core/Allocator.h>
+#include <c10/core/DeviceType.h>
 #include <c10/cpu/CPUAllocator.h>
 #include <c10/cpu/impl/alloc.h>
-#include <c10/core/DeviceType.h>
 #include <c10/util/UniqueVoidPtr.h>
 
 namespace c10 {
@@ -26,7 +26,6 @@ struct C10_API CPUAllocator final : Allocator {
   void copy_data(void* dest, const void* src, size_t count) const override {
     default_copy_data(dest, src, count);
   }
-
 };
 
 static CPUAllocator g_cpu_alloc;
@@ -35,7 +34,7 @@ Allocator* GetCPUAllocator() {
   return &g_cpu_alloc;
 }
 
-void SetCPUAllocator(c10::Allocator *alloc, uint8_t priority) {
+void SetCPUAllocator(c10::Allocator* alloc, uint8_t priority) {
   SetAllocator(DeviceType::CPU, alloc, priority);
 }
 
