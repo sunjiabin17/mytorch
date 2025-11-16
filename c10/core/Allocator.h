@@ -108,6 +108,24 @@ struct C10_API Allocator {
 
   DataPtr clone(const void* data, size_t n);
 
+  virtual bool is_simple_data_ptr(const DataPtr& data_ptr) const;
+
+  virtual DeleterFnPtr raw_deleter() const {
+    return nullptr;
+  }
+
+  void* raw_allocate(size_t n) {
+    auto dptr = allocate(n);
+    TORCH_INTERNAL_ASSERT(dptr.get() == dptr.get_context());
+    return dptr.release_context();
+  }
+
+  void raw_deallocate(void* ptr) {
+    auto d = raw_deleter();
+    TORCH_CHECK(d, "Allocator does not support raw deallocation");
+    d(ptr);
+  }
+
   virtual void copy_data(void* dest, const void* src, size_t count) const = 0;
 
  protected:

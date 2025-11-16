@@ -14,6 +14,10 @@ DataPtr Allocator::clone(const void* data, size_t n) {
   return new_data;
 }
 
+bool Allocator::is_simple_data_ptr(const DataPtr& data_ptr) const {
+  return data_ptr.get() == data_ptr.get_context();
+}
+
 void Allocator::default_copy_data(void* dest, const void* src, size_t count)
     const {
   std::memcpy(dest, src, count);
