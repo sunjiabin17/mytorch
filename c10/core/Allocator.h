@@ -10,13 +10,6 @@
 #include <utility>
 
 namespace c10 {
-using DeleterType = void (*)(void*);
-
-namespace detail {
-
-C10_API void deleteNothing(void*);
-
-} // namespace detail
 
 class C10_API DataPtr {
  private:
@@ -26,7 +19,7 @@ class C10_API DataPtr {
  public:
   DataPtr() : device_(DeviceType::CPU) {}
   DataPtr(void* data, Device device) : data_ptr_(data), device_(device) {}
-  DataPtr(void* data, void* ctx, Device device, DeleterType deleter)
+  DataPtr(void* data, void* ctx, DeleterFnPtr deleter,  Device device)
       : data_ptr_(data, ctx, deleter), device_(device) {}
 
   void* operator->() const {
@@ -53,7 +46,7 @@ class C10_API DataPtr {
     return data_ptr_.release_context();
   }
 
-  std::unique_ptr<void, DeleterType>&& move_context() {
+  std::unique_ptr<void, DeleterFnPtr>&& move_context() {
     return data_ptr_.move_context();
   }
 
@@ -61,18 +54,18 @@ class C10_API DataPtr {
     return static_cast<bool>(data_ptr_);
   }
 
-  DeleterType get_deleter() const {
+  DeleterFnPtr get_deleter() const {
     return data_ptr_.get_deleter();
   }
 
   [[nodiscard]] bool compare_exchange_deleter(
-      DeleterType expected_deleter,
-      DeleterType new_deleter) {
+      DeleterFnPtr expected_deleter,
+      DeleterFnPtr new_deleter) {
     return data_ptr_.compare_exchange_deleter(expected_deleter, new_deleter);
   }
 
   template <typename T>
-  T* cast_context(DeleterType expected_deleter) const {
+  T* cast_context(DeleterFnPtr expected_deleter) const {
     return data_ptr_.cast_context<T>(expected_deleter);
   }
 

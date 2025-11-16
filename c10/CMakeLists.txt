@@ -9,6 +9,8 @@ file(GLOB C10_SRCS
         "util/*.cpp"
         "core/*.cpp"
         "core/impl/*.cpp"
+        "cpu/*.cpp"
+        "cpu/impl/*.cpp"
     )
 
 file(GLOB C10_HEADERS
@@ -16,9 +18,11 @@ file(GLOB C10_HEADERS
         "util/*.h"
         "core/*.h"
         "core/impl/*.h"
+        "cpu/*.h"
+        "cpu/impl/*.h"
     )
 
-add_library(c10 ${C10_SRCS} ${C10_HEADERS})
+add_library(c10 SHARED ${C10_SRCS} ${C10_HEADERS})
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         DESTINATION include

@@ -2,11 +2,6 @@
 #include <cstring>
 
 namespace c10 {
-namespace detail {
-
-void deleteNothing(void*) {}
-
-} // namespace detail
 
 DataPtr Allocator::clone(const void* data, size_t n) {
   DataPtr new_data = allocate(n);
