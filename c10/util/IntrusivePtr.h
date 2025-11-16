@@ -10,9 +10,17 @@
 #include <type_traits>
 
 namespace c10 {
+class intrusive_ptr_target;
 
 namespace raw {
 struct DontIncreaseRefcount {};
+
+namespace intrusive_ptr {
+inline void incref(intrusive_ptr_target* self);
+}
+namespace weak_intrusive_ptr {
+inline void incref(intrusive_ptr_target* self);
+}
 } // namespace raw
 
 // NOLINTNEXTLINE(cppcoreguidelines-virtual-class-destructor)
@@ -25,6 +33,10 @@ class C10_API intrusive_ptr_target {
 
   template <class TTarget, class NullType>
   friend class weak_intrusive_ptr;
+
+  friend inline void raw::intrusive_ptr::incref(intrusive_ptr_target* self);
+  friend inline void raw::weak_intrusive_ptr::incref(
+      intrusive_ptr_target* self);
 
  protected:
   virtual ~intrusive_ptr_target() {
@@ -176,7 +188,7 @@ class intrusive_ptr final {
   // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
   intrusive_ptr& operator=(const intrusive_ptr& rhs) & noexcept {
     // NOLINTNEXTLINE(*assign-operator, *assignment-signature)
-    return operator=<TTarget, NullType>(rhs);
+    return operator= <TTarget, NullType>(rhs);
   }
 
   template <class From, class FromNullType>
@@ -208,7 +220,7 @@ class intrusive_ptr final {
   // move assignment
   intrusive_ptr& operator=(intrusive_ptr&& rhs) & noexcept {
     // NOLINTNEXTLINE(*assign*)
-    return operator=<TTarget, NullType>(std::move(rhs));
+    return operator= <TTarget, NullType>(std::move(rhs));
   }
 
   template <class From, class FromNullType>
@@ -397,7 +409,9 @@ struct MaybeOwnedTraits<c10::intrusive_ptr<T>> {
   }
 };
 
-template <class TTarget, class NullType = detail::intrusive_default_null<TTarget>>
+template <
+    class TTarget,
+    class NullType = detail::intrusive_default_null<TTarget>>
 class weak_intrusive_ptr final {
  private:
   TTarget* target_;
@@ -460,7 +474,7 @@ class weak_intrusive_ptr final {
       return *this;
     }
     // NOLINTNEXTLINE(*assign-operator, *assignment-signature)
-    return operator=<TTarget, NullType>(rhs);
+    return operator= <TTarget, NullType>(rhs);
   }
 
   template <class From, class FromNullType>
@@ -492,7 +506,7 @@ class weak_intrusive_ptr final {
   // move assignment
   weak_intrusive_ptr& operator=(weak_intrusive_ptr&& rhs) & noexcept {
     // NOLINTNEXTLINE(*assign*)
-    return operator=<TTarget, NullType>(std::move(rhs));
+    return operator= <TTarget, NullType>(std::move(rhs));
   }
 
   template <class From, class FromNullType>
@@ -623,6 +637,54 @@ inline void swap(
   lhs.swap(rhs);
 }
 
+namespace raw {
+namespace intrusive_ptr {
+inline void incref(intrusive_ptr_target* self) {
+  if (self) {
+    detail::atomic_refcount_increment(self->refcount_);
+  }
+}
+
+inline void decref(intrusive_ptr_target* self) {
+  c10::intrusive_ptr<intrusive_ptr_target>::reclaim(self);
+}
+
+template <typename T>
+inline T* make_weak(T* self) {
+  // NB: 'this' is a strong pointer, but we return a weak pointer
+  auto ptr = c10::intrusive_ptr<T>::reclaim(self);
+  c10::weak_intrusive_ptr<T> wptr(ptr);
+  ptr.release();
+  return wptr.release();
+}
+
+inline uint32_t use_count(intrusive_ptr_target* self) {
+  auto ptr = c10::intrusive_ptr<intrusive_ptr_target>::reclaim(self);
+  auto r = ptr.ref_use_count();
+  ptr.release();
+  return r;
+}
+
+} // namespace intrusive_ptr
+
+namespace weak_intrusive_ptr {
+inline void incref(intrusive_ptr_target* self) {
+  detail::atomic_weakcount_increment(self->weakcount_);
+}
+
+inline void decref(intrusive_ptr_target* self) {
+  c10::weak_intrusive_ptr<intrusive_ptr_target>::reclaim(self);
+}
+
+template <typename T>
+inline T* lock(T* self) {
+  auto wptr = c10::weak_intrusive_ptr<T>::reclaim(self);
+  auto ptr = wptr.lock();
+  wptr.release();
+  return ptr.release();
+}
+} // namespace weak_intrusive_ptr
+} // namespace raw
 } // namespace c10
 
 namespace std {
