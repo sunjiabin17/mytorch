@@ -64,7 +64,7 @@ class UniqueVoidPtr {
     }
     return static_cast<T*>(get_context());
   }
-  
+
   operator bool() const {
     return data_ || ctx_;
   }

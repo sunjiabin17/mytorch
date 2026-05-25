@@ -5,6 +5,8 @@
 #include <c10/core/TensorImpl.h>
 #include <c10/util/IntrusivePtr.h>
 
+#include <mutex>
+
 namespace c10 {
 
 constexpr int64_t default_rng_seed = 67280421310721;

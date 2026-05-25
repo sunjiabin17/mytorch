@@ -23,20 +23,20 @@ class TensorBase;
 
 namespace c10 {
 
-struct C10_API AutogradMetaInterface {
-  // TODO
+struct C10_API AutogradMetaInterface{
+    // TODO
 };
 
 namespace impl {
-struct C10_API AutogradMetaFactory {
-  // TODO
+struct C10_API AutogradMetaFactory{
+    // TODO
 };
 
 // SetAutogradMetaFactory
 // GetAutogradMetaFactory
 
-struct C10_API AutogradMetaFactoryRegisterer {
-  // TODO
+struct C10_API AutogradMetaFactoryRegisterer{
+    // TODO
 };
 } // namespace impl
 

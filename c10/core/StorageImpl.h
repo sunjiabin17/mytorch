@@ -95,7 +95,7 @@ struct C10_API StorageImpl : public c10::intrusive_ptr_target {
   }
 
   DataPtr set_data_ptr(DataPtr&& data_ptr) {
-  return set_data_ptr_no_materialize_cow(std::move(data_ptr));
+    return set_data_ptr_no_materialize_cow(std::move(data_ptr));
   }
 
   void set_data_ptr_noswap(DataPtr&& data_ptr) {
@@ -110,7 +110,6 @@ struct C10_API StorageImpl : public c10::intrusive_ptr_target {
     refresh_has_data_ptr_check();
     return old_data_ptr;
   }
-
 
   void set_throw_on_mutable_data_ptr() {
     throw_on_mutable_data_ptr_ = true;

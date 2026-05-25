@@ -5,8 +5,8 @@
 #include <c10/util/Exception.h>
 #include <c10/util/IntrusivePtr.h>
 #include <c10/util/MaybeOwned.h>
-#include <c10/util/TensorImpl.h>
-#include <c10/util/UndefinedTensorImpl.h>
+#include <c10/core/TensorImpl.h>
+#include <c10/core/UndefinedTensorImpl.h>
 
 namespace at {
 

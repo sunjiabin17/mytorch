@@ -11,7 +11,7 @@ void* alloc_cpu(size_t nbytes) {
   }
 
   TORCH_INTERNAL_ASSERT(nbytes >= 0);
-  void* data = std::malloc(nbytes); //NOLINT(cppcoreguidelines-no-malloc)
+  void* data = std::malloc(nbytes); // NOLINT(cppcoreguidelines-no-malloc)
   if (!data) {
     throw std::bad_alloc();
   }

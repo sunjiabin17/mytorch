@@ -32,31 +32,28 @@ struct C10_API Storage {
       const size_t size_bytes,
       Allocator* allocator = nullptr,
       bool resizable = false)
-      : storage_impl_(
-            c10::make_intrusive<StorageImpl>(
-                StorageImpl::use_byte_size_t{},
-                size_bytes,
-                allocator,
-                resizable)) {}
+      : storage_impl_(c10::make_intrusive<StorageImpl>(
+            StorageImpl::use_byte_size_t{},
+            size_bytes,
+            allocator,
+            resizable)) {}
   Storage(
       use_byte_size_t,
       const size_t size_bytes,
       DataPtr data_ptr,
       Allocator* allocator = nullptr,
       bool resizable = false)
-      : storage_impl_(
-            c10::make_intrusive<StorageImpl>(
-                StorageImpl::use_byte_size_t{},
-                size_bytes,
-                std::move(data_ptr),
-                allocator,
-                resizable)) {}
+      : storage_impl_(c10::make_intrusive<StorageImpl>(
+            StorageImpl::use_byte_size_t{},
+            size_bytes,
+            std::move(data_ptr),
+            allocator,
+            resizable)) {}
 
  protected:
   explicit Storage(unsafe_borrow_t, const Storage& rhs)
-      : storage_impl_(
-            c10::intrusive_ptr<c10::StorageImpl>::reclaim(
-                rhs.storage_impl_.get())) {}
+      : storage_impl_(c10::intrusive_ptr<c10::StorageImpl>::reclaim(
+            rhs.storage_impl_.get())) {}
 
  public:
   void set_nbytes(size_t size_bytes) {

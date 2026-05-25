@@ -57,9 +57,6 @@ TEST(MaybeOwnedTest, test2) {
 
   auto maybe_owned_copy = maybe_owned_move;
   std::cout << maybe_owned_copy->use_count() << std::endl;
-
-  maybe_owned_move.~MaybeOwned();
-  std::cout << maybe_owned_copy->use_count() << std::endl;
 }
 
 TEST(MaybeOwnedTest, test3) {
