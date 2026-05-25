@@ -361,14 +361,14 @@ template <class TTarget1, class NullType1>
 inline bool operator!=(
     const intrusive_ptr<TTarget1, NullType1>& lhs,
     std::nullptr_t) noexcept {
-  return !operator==(lhs, lhs);
+  return !operator==(lhs, nullptr);
 }
 
 template <class TTarget1, class NullType1>
 inline bool operator!=(
     std::nullptr_t,
     const intrusive_ptr<TTarget1, NullType1>& rhs) noexcept {
-  return !operator==(rhs, rhs);
+  return !operator==(nullptr, rhs);
 }
 
 template <class TTarget1, class NullType1>
